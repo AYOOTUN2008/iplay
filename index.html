@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Linking external CSS -->
+    <style>
+     body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background: linear-gradient(to bottom right, #ff00cc, #333399); /* Pink gradient background */
+}
+
+.container {
+    text-align: center;
+    color: white;
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-gap: 5px;
+    margin: 10px auto;
+    background-color: #333399; /* Blue color for cells */
+    border-radius: 5px;
+    padding: 5px;
+}
+
+.cell {
+    width: 100px;
+    height: 100px;
+    background-color: #6699ff; /* Light blue */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    cursor: pointer;
+}
+
+.cell:hover {
+    background-color: #88aaff; /* Lighter blue on hover */
+}
+
+#turn {
+    margin-bottom: 10px;
+}
+
+#score {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+#level, #round {
+    font-size: 1em;
+    margin-bottom: 5px;
+}
+
+#roundsInput {
+    background-color: yellow; /* Yellow background color for the input */
+    font-size: 1em;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#winner {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: yellow; /* Yellow color for winner text */
+}
+
+button {
+    font-size: 1em;
+    padding: 10px 20px;
+    background-color: #ff00cc; /* Pink button background */
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: #ff3399; /* Darker pink on hover */
+}
+   
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic Tac Toe</h1>
+        <div id="turn">Turn: X</div>
+        <div id="score">Score - Player X: 0 | Player O: 0</div>
+        <div id="level">Level: 1</div>
+        <div id="round">Round: 1</div>
+        <div id="winner"></div>
+        <div class="board">
+            <div class="cell" onclick="makeMove(0)"></div>
+            <div class="cell" onclick="makeMove(1)"></div>
+            <div class="cell" onclick="makeMove(2)"></div>
+            <div class="cell" onclick="makeMove(3)"></div>
+            <div class="cell" onclick="makeMove(4)"></div>
+            <div class="cell" onclick="makeMove(5)"></div>
+            <div class="cell" onclick="makeMove(6)"></div>
+            <div class="cell" onclick="makeMove(7)"></div>
+            <div class="cell" onclick="makeMove(8)"></div>
+        </div>
+        <button id="restartBtn" onclick="restartGame()">Restart Game</button>
+        <button id="humanBtn" onclick="setMode('human')">Play with Human</button>
+        <button id="botBtn" onclick="setMode('bot')">Play with Bot</button>
+        <input type="number" id="roundsInput" placeholder="Rounds (1-5)" min="1" max="5" class="yellow-bg">
+    </div>
+    <script src="script.js"></script> <!-- Linking external JavaScript -->
+  <script>
+    let currentPlayer = 'X';
+let mode = 'human'; // Default mode is human vs human
+let moves = 0;
+let gameEnded = false;
+let rounds = 1; // Default rounds
+let scoreX = 0;
+let scoreO = 0;
+
+const winCombos = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+    [0, 4, 8], [2, 4, 6]             // diagonals
+];
+
+const cells = document.querySelectorAll('.cell');
+const turnDisplay = document.getElementById('turn');
+const scoreDisplay = document.getElementById('score');
+const winnerDisplay = document.getElementById('winner');
+const restartBtn = document.getElementById('restartBtn');
+const humanBtn = document.getElementById('humanBtn');
+const botBtn = document.getElementById('botBtn');
+const roundsInput = document.getElementById('roundsInput');
+
+// Event listeners for game mode buttons and rounds input
+humanBtn.addEventListener('click', () => setMode('human'));
+botBtn.addEventListener('click', () => setMode('bot'));
+roundsInput.addEventListener('change', () => {
+    rounds = parseInt(roundsInput.value) || 1;
+    restartGame();
+});
+
+// Function to set game mode
+function setMode(selectedMode) {
+    mode = selectedMode;
+    restartGame();
+    if (mode === 'bot' && currentPlayer === 'O') {
+        makeBotMove();
+    }
+}
+
+// Function to handle player move
+function makeMove(index) {
+    if (gameEnded || cells[index].textContent !== '') return;
+
+    cells[index].textContent = currentPlayer;
+    moves++;
+
+    if (checkWin()) {
+        winnerDisplay.textContent = `Player ${currentPlayer} wins!`;
+        if (currentPlayer === 'X') {
+            scoreX++;
+        } else {
+            scoreO++;
+        }
+        updateScore();
+        gameEnded = true;
+    } else if (moves === 9) {
+        winnerDisplay.textContent = 'It\'s a draw!';
+        gameEnded = true;
+    } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        turnDisplay.textContent = `Turn: ${currentPlayer}`;
+
+        if (mode === 'bot' && currentPlayer === 'O') {
+            makeBotMove();
+        }
+    }
+
+    // Check if a round has ended
+    if (gameEnded && moves !== 0 && rounds > 1) {
+        setTimeout(() => {
+            rounds--;
+            restartGame();
+        }, 1000);
+    }
+}
+
+// Function to make bot move (random move)
+function makeBotMove() {
+    let emptyCells = [...cells].filter(cell => cell.textContent === '');
+    if (emptyCells.length > 0) {
+        let randomIndex = Math.floor(Math.random() * emptyCells.length);
+        makeMove(Array.from(cells).indexOf(emptyCells[randomIndex]));
+    }
+}
+
+// Function to check for a win
+function checkWin() {
+    return winCombos.some(combination => {
+        return combination.every(index => {
+            return cells[index].textContent === currentPlayer;
+        });
+    });
+}
+
+// Function to update score display
+function updateScore() {
+    scoreDisplay.textContent = `Score - Player X: ${scoreX} | Player O: ${scoreO}`;
+}
+
+// Function to restart the game
+function restartGame() {
+    currentPlayer = 'X';
+    moves = 0;
+    gameEnded = false;
+    turnDisplay.textContent = `Turn: ${currentPlayer}`;
+    winnerDisplay.textContent = '';
+    cells.forEach(cell => cell.textContent = '');
+
+    if (mode === 'bot' && currentPlayer === 'O') {
+        makeBotMove();
+    }
+}
+
+  </script>
+</body>
+</html>
